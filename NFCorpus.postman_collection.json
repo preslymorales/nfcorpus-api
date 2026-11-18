@@ -1,0 +1,163 @@
+{
+  "info": {
+    "name": "NFCorpus Search API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:7860",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Disponibilidad",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const data = pm.response.json();",
+              "pm.test(\"NFCorpus cargado\", () => {",
+              "  pm.expect(data.status).to.equal(\"ok\");",
+              "  pm.expect(data.corpus).to.equal(\"NFCorpus\");",
+              "  pm.expect(data.documents).to.equal(3633);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buscar con BM25",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/search",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "search"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"effects of green tea on blood pressure\",\n  \"model\": \"bm25\",\n  \"top_k\": 3\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const data = pm.response.json();",
+              "const {model, top_k} = JSON.parse(pm.request.body.raw);",
+              "pm.test(\"Modelo, orden e identificadores válidos\", () => {",
+              "  pm.expect(data.model).to.equal(model);",
+              "  pm.expect(data.results.length).to.be.within(1, top_k);",
+              "  const ids = new Set();",
+              "  data.results.forEach((result, i) => {",
+              "    pm.expect(result.rank).to.equal(i + 1);",
+              "    pm.expect(result.document_id).to.be.a(\"string\").and.not.empty;",
+              "    pm.expect(result.score).to.be.a(\"number\");",
+              "    pm.expect(result.title).to.be.a(\"string\");",
+              "    pm.expect(result.snippet).to.be.a(\"string\");",
+              "    pm.expect(ids.has(result.document_id)).to.equal(false);",
+              "    if (i) pm.expect(result.score).at.most(data.results[i - 1].score);",
+              "    ids.add(result.document_id);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buscar con TFIDF",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{base_url}}/search",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "search"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"effects of green tea on blood pressure\",\n  \"model\": \"tfidf\",\n  \"top_k\": 3\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const data = pm.response.json();",
+              "const {model, top_k} = JSON.parse(pm.request.body.raw);",
+              "pm.test(\"Modelo, orden e identificadores válidos\", () => {",
+              "  pm.expect(data.model).to.equal(model);",
+              "  pm.expect(data.results.length).to.be.within(1, top_k);",
+              "  const ids = new Set();",
+              "  data.results.forEach((result, i) => {",
+              "    pm.expect(result.rank).to.equal(i + 1);",
+              "    pm.expect(result.document_id).to.be.a(\"string\").and.not.empty;",
+              "    pm.expect(result.score).to.be.a(\"number\");",
+              "    pm.expect(result.title).to.be.a(\"string\");",
+              "    pm.expect(result.snippet).to.be.a(\"string\");",
+              "    pm.expect(ids.has(result.document_id)).to.equal(false);",
+              "    if (i) pm.expect(result.score).at.most(data.results[i - 1].score);",
+              "    ids.add(result.document_id);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

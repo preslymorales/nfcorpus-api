@@ -1,0 +1,2 @@
+datasets>=3.6,<6
+gunicorn==23.0.0
